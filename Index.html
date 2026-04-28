@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TIPLINE — Pronósticos Deportivos</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --surface: #12151a;
+    --surface2: #1a1e26;
+    --border: #1e2330;
+    --accent: #c8f135;
+    --accent2: #3b82f6;
+    --red: #f43f5e;
+    --text: #e8eaf0;
+    --muted: #5a6272;
+    --win: #c8f135;
+    --loss: #f43f5e;
+    --void: #6b7280;
+    --pending: #f59e0b;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── NAV ── */
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2.5rem;
+    height: 58px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: rgba(10,12,15,0.96);
+    backdrop-filter: blur(16px);
+    z-index: 200;
+  }
+
+  .logo {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 1.6rem;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+  }
+  .logo span { color: var(--text); }
+
+  nav ul { display: flex; gap: 2rem; list-style: none; }
+  nav a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  nav a:hover { color: var(--text); }
+  .nav-cta {
+    background: var(--accent) !important;
+    color: #0a0c0f !important;
+    padding: 0.4rem 1.1rem;
+    border-radius: 3px;
+  }
+
+  /* ── TICKER ── */
+  .ticker {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0.5rem 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .ticker-inner {
+    display: inline-block;
+    animation: ticker 40s linear infinite;
+  }
+  .ticker-inner:hover { animation-play-state: paused; }
+  @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  .ticker-item {
+    display: inline-block;
+    margin: 0 2.5rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .ticker-item .win-tag { color: var(--win); margin-left: 0.4rem; }
+  .ticker-item .loss-tag { color: var(--loss); margin-left: 0.4rem; }
+  .ticker-item .odds-tag { color: var(--text); margin-left: 0.3rem; }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+  }
+  .stat-item {
+    flex: 1;
+    padding: 1.1rem 1.5rem;
+    border-right: 1px solid var(--border);
+    text-align: center;
+  }
+  .stat-item:last-child { border-right: none; }
+  .stat-number {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 2rem;
+    font-weight: 900;
+    line-height: 1;
+    color: var(--accent);
+  }
+  .stat-number.blue { color: var(--accent2); }
+  .stat-number.white { color: var(--text); }
+  .stat-number.orange { color: var(--pending); }
+  .stat-label {
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    margin-top: 0.3rem;
+  }
+
+  /* ── LAYOUT ── */
+  .container {
+    max-width: 1220px;
+    margin: 0 auto;
+    padding: 2rem 2rem;
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  /* ── SECTION HEADER ── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+  .section-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .section-title::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+  }
+
+  /* ── FILTERS ── */
+  .filters {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 1.2rem;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    padding: 0.3rem 0.85rem;
+    border-radius: 2px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Barlow', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .filter-btn:hover { color: var(--text); border-color: #333; }
+  .filter-btn.active { background: var(--surface2); color: var(--text); border-color: #2e3444; }
+  /* ── TABS ── */
+  .tab-bar {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.2rem;
+    gap: 0;
+  }
+  .tab {
+    padding: 0.55rem 1.1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── PICK CARD ── */
+  .pick-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    margin-bottom: 0.65rem;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+  }
+  .pick-card:hover {
+    border-color: #2a3040;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  }
+  .pick-card.premium { border-color: rgba(200,241,53,0.15); }
+  .pick-card[data-result="WIN"] { border-left: 3px solid var(--win); }
+  .pick-card[data-result="LOSS"] { border-left: 3px solid var(--loss); }
+  .pick-card[data-result="VOID"] { border-left: 3px solid var(--void); }
+
+  .pick-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.015);
+  }
+  .sport-tag {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .pick-meta { display: flex; align-items: center; gap: 0.7rem; }
+  .time-badge { font-size: 0.7rem; color: var(--muted); }
+  .premium-badge {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    color: var(--accent);
+    background: rgba(200,241,53,0.08);
+    padding: 0.13rem 0.45rem;
+    border-radius: 2px;
+< truncated lines 261-637 >
+  const d = new Date(yyyy, mm-1, dd);
+  const t = new Date(); t.setHours(0,0,0,0);
+  return d > t;
+}
+
+// Sport emoji map
+const SPORT_EMOJI = { 'Fútbol':'⚽', 'Baloncesto':'🏀', 'Tenis':'🎾', 'Hockey':'🏒', 'NFL':'🏈', 'Béisbol':'⚾', 'MMA':'🥊' };
+
+// ── PARSE CSV ──
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g,'_'));
+  return lines.slice(1).map(line => {
+    const vals = line.split(',');
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = (vals[i]||'').trim(); });
+    return obj;
+  });
+}
+
+// ── STATS CALCULATION ──
+function calcStats(picks) {
+  const resolved = picks.filter(p => ['WIN','LOSS','VOID'].includes(p.resultado?.toUpperCase()));
+  const wins = picks.filter(p => p.resultado?.toUpperCase() === 'WIN').length;
+  const losses = picks.filter(p => p.resultado?.toUpperCase() === 'LOSS').length;
+  const voids = picks.filter(p => p.resultado?.toUpperCase() === 'VOID').length;
+  const pct = resolved.length > 0 ? Math.round((wins / (wins + losses)) * 100) : 0;
+
+  // Simple ROI: sum of (cuota-1) for wins, -1 for losses, per unit
+  let profit = 0;
+  resolved.forEach(p => {
+    const u = parseFloat(p.unidades) || 1;
+    const c = parseFloat(p.cuota) || 1;
+    if (p.resultado?.toUpperCase() === 'WIN') profit += (c - 1) * u;
+    else if (p.resultado?.toUpperCase() === 'LOSS') profit -= u;
+  });
+  const totalStaked = resolved.reduce((s,p) => s + (parseFloat(p.unidades)||1), 0);
+  const roi = totalStaked > 0 ? ((profit / totalStaked) * 100).toFixed(1) : '0.0';
+
+  // Streak
+  let streak = 0, streakType = '';
+  const byDate = [...resolved].reverse();
+  for (const p of byDate) {
+    const r = p.resultado?.toUpperCase();
+    if (r === 'VOID') continue;
+    if (!streakType) { streakType = r; streak = 1; }
+    else if (r === streakType) streak++;
+    else break;
+  }
+
+  // By sport
+  const sports = {};
+  picks.forEach(p => {
+    const s = p.deporte || 'Otro';
+    if (!sports[s]) sports[s] = { w:0, l:0 };
+    if (p.resultado?.toUpperCase() === 'WIN') sports[s].w++;
+    else if (p.resultado?.toUpperCase() === 'LOSS') sports[s].l++;
+  });
+
+  const todayPicks = picks.filter(p => isToday(p.fecha)).length;
+
+  return { wins, losses, voids, pct, roi, streak, streakType, sports, todayPicks, total: picks.length };
+}
+
+// ── RENDER PICK CARD ──
+function renderCard(pick) {
+  const res = (pick.resultado || 'PENDING').toUpperCase();
+  const isPremium = pick.premium?.toLowerCase() === 'si';
+  const emoji = SPORT_EMOJI[pick.deporte] || '🏅';
+  const units = parseInt(pick.unidades) || 1;
+  const confLevel = units >= 4 ? 'Muy alta' : units === 3 ? 'Alta' : 'Media';
+
+  // Confidence dots
+  const dots = Array.from({length:5}, (_,i) =>
+    `<div class="conf-dot${i < units ? ' on' : ''}"></div>`
+  ).join('');
+
+  // Right side
+  let rightHTML = '';
+  if (isPremium && res === 'PENDING') {
+    rightHTML = `<div class="locked-box">🔒 Acceso Premium</div>`;
+  } else {
+    rightHTML = `
+      <div class="pick-selection">${isPremium && res==='PENDING' ? '••••••••' : pick.seleccion}</div>
+      <div class="pick-odds">${pick.cuota}</div>
+      <div class="result-pill ${res}">${res}</div>
+      <div class="confidence">
+        <div style="display:flex;gap:2px">${dots}</div>
+        <span class="conf-label">${confLevel}</span>
+      </div>`;
+  }  const isLive = res === 'PENDING' && isToday(pick.fecha);
+  const timeHTML = isLive
+    ? `<span class="live-badge"><span class="live-dot"></span>Hoy ${pick.hora}</span>`
+    : `<span class="time-badge">${pick.fecha} ${pick.hora}</span>`;
+
+  return `
+    <div class="pick-card${isPremium?' premium':''}" data-result="${res}" data-sport="${pick.deporte}">
+      <div class="pick-header">
+        <div class="sport-tag">${emoji} ${pick.deporte} · ${pick.liga}</div>
+        <div class="pick-meta">
+          ${isPremium ? '<span class="premium-badge">★ Premium</span>' : ''}
+          ${timeHTML}
+        </div>
+      </div>
+      <div class="pick-body">
+        <div class="match-info">
+          <div class="match-teams">${pick.partido}</div>
+          <div class="match-league">${pick.notas ? pick.notas.substring(0,60)+(pick.notas.length>60?'...':'') : ''}</div>
+          <div class="stake">
+            ${Array.from({length:5},(_,i)=>`<div class="stake-dot${i<units?' on':''}"></div>`).join('')}
+          </div>
+        </div>
+        <div class="pick-right">${rightHTML}</div>
+      </div>
+    </div>`;
+}
+
+// ── RENDER ALL ──
+let allPicks = [];
+let activeTab = 'today';
+let activeSport = 'all';
+
+function renderPicks() {
+  let filtered = allPicks;
+
+  if (activeTab === 'today') filtered = filtered.filter(p => isToday(p.fecha));
+  else if (activeTab === 'upcoming') filtered = filtered.filter(p => isFuture(p.fecha) && !isToday(p.fecha));
+
+  if (activeSport !== 'all') filtered = filtered.filter(p => p.deporte === activeSport);
+
+  const container = document.getElementById('picks-container');
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">📭</div>No hay picks para esta selección</div>`;
+    return;
+  }
+
+  // Sort: PENDING first, then by date desc
+  filtered.sort((a,b) => {
+    if (a.resultado==='PENDING' && b.resultado!=='PENDING') return -1;
+    if (a.resultado!=='PENDING' && b.resultado==='PENDING') return 1;
+    return 0;
+  });
+
+  container.innerHTML = filtered.map(renderCard).join('');
+}
+
+// ── RENDER SIDEBAR ──
+function renderSidebar(stats) {
+  document.getElementById('stat-pct').textContent = stats.pct + '%';
+  document.getElementById('stat-roi').textContent = (stats.roi >= 0 ? '+' : '') + stats.roi + '%';
+  document.getElementById('stat-total').textContent = stats.total;
+  document.getElementById('stat-today').textContent = stats.todayPicks;
+  document.getElementById('stat-streak').textContent = stats.streak + (stats.streakType === 'WIN' ? '🟢' : stats.streakType === 'LOSS' ? '🔴' : '');
+  document.getElementById('side-roi').textContent = (stats.roi >= 0 ? '+' : '') + stats.roi + '%';
+  document.getElementById('side-wins').textContent = stats.wins;
+  document.getElementById('side-losses').textContent = stats.losses;
+  document.getElementById('side-voids').textContent = stats.voids;
+
+  // Perf by sport
+  const perfList = document.getElementById('perf-list');
+  const sportEntries = Object.entries(stats.sports)
+    .filter(([,v]) => (v.w+v.l) > 0)
+    .map(([s,v]) => ({ s, pct: Math.round(v.w/(v.w+v.l)*100) }))
+    .sort((a,b) => b.pct - a.pct)
+    .slice(0, 5);
+
+  perfList.innerHTML = sportEntries.map(({s, pct}) => `
+    <div class="perf-row">
+      <span class="perf-label">${s}</span>
+      <div class="perf-track"><div class="perf-fill" data-w="${pct}"></div></div>
+      <span class="perf-pct">${pct}%</span>
+    </div>`).join('');
+
+  setTimeout(() => {
+    document.querySelectorAll('.perf-fill').forEach(el => {
+      el.style.width = el.dataset.w + '%';
+    });
+  }, 200);
+
+  // Recent results
+  const recent = allPicks
+    .filter(p => ['WIN','LOSS','VOID'].includes(p.resultado?.toUpperCase()))
+    .slice(-6).reverse();
+
+  document.getElementById('recent-results').innerHTML = recent.map(p => {
+    const r = p.resultado.toUpperCase();
+    return `
+      <div class="result-row">
+        <div class="res-badge ${r}">${r}</div>
+        <div class="res-info">
+          <div class="res-match">${p.partido}</div>
+          <div class="res-pick">${p.seleccion}</div>
+        </div>
+        <div class="res-odds ${r==='WIN'?'win':''}">${p.cuota}</div>
+      </div>`;
+  }).join('');
+}
+
+// ── TICKER ──
+function renderTicker(picks) {
+  const resolved = picks.filter(p => p.resultado?.toUpperCase() !== 'PENDING').slice(-12);
+  const items = resolved.map(p => {
+    const r = p.resultado.toUpperCase();
+    const tag = r === 'WIN' ? `<span class="win-tag">WIN</span>` : r === 'LOSS' ? `<span class="loss-tag">LOSS</span>` : `<span class="win-tag">VOID</span>`;
+    return `<span class="ticker-item">${p.partido} · ${p.seleccion}<span class="odds-tag">@${p.cuota}</span>${tag}</span>`;
+  }).join('');
+  const doubled = items + items; // loop
+  const el = document.getElementById('ticker-inner');
+  el.innerHTML = doubled;
+}
+
+// ── INIT ──
+async function init() {
+  let data = EXAMPLE_DATA;
+
+  if (SHEET_URL) {
+    try {
+      const resp = await fetch(SHEET_URL);
+      const text = await resp.text();
+      const parsed = parseCSV(text);
+      if (parsed.length > 0) data = parsed;
+    } catch(e) {
+      console.warn('No se pudo cargar el Sheet, usando datos de ejemplo.', e);
+    }
+  }
+
+  allPicks = data;
+  const stats = calcStats(allPicks);
+  renderPicks();
+  renderSidebar(stats);
+  renderTicker(allPicks);
+}
+
+// ── EVENTS ──
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    activeTab = tab.dataset.tab;
+    renderPicks();
+  });
+});
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeSport = btn.dataset.sport;
+    renderPicks();
+  });
+});
+
+init();
+</script>
+</body>
+</html>
